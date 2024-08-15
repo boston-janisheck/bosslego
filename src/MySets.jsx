@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 
 const MySets = () => {
   const [sets, setSets] = useState([]);
@@ -6,39 +6,20 @@ const MySets = () => {
 
   useEffect(() => {
     const fetchSets = async () => {
-      const apiKey = "3-VIb8-Uz2c-cDjiK";
-      const userHash = "bPQKzF7H5P";
-      const params = JSON.stringify({ owned: 1, orderBy: "YearFrom" });
-
-      const url = `https://brickset.com/api/v3.asmx/getSets?apiKey=${apiKey}&userHash=${userHash}&params=${params}`;
-
       try {
-        const response = await fetch(url, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-          body: new URLSearchParams({
-            apiKey,
-            userHash,
-            params,
-          }),
-        });
+        const response = await fetch("http://localhost:5001/getSets");
 
         if (!response.ok) {
-          throw new Error(`Network response was not ok: ${response.status}`);
+          throw new Error("Network response was not ok");
         }
 
-        const text = await response.text();
-        const data = JSON.parse(text);
-
-        if (data.sets) {
+        const data = await response.json();
+        if (data.status === "success") {
           setSets(data.sets);
         } else {
-          throw new Error("Unexpected data structure: No 'sets' field found.");
+          throw new Error(data.message || "Error fetching LEGO sets");
         }
       } catch (error) {
-        console.error("There was a problem with the fetch operation:", error);
         setError(error.message);
       }
     };
@@ -46,13 +27,18 @@ const MySets = () => {
     fetchSets();
   }, []);
 
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
+
   return (
     <div>
       <h1>My LEGO Sets</h1>
-      {error && <p>Error: {error}</p>}
       <ul>
         {sets.map((set) => (
-          <li key={set.setID}>{set.name}</li>
+          <li key={set.setID}>
+            {set.name} - {set.year}
+          </li>
         ))}
       </ul>
     </div>
